@@ -18,8 +18,8 @@ app.set('view engine', 'ejs');
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(express.static("public"));
 
-let dbURL = process.env.SECRET_KEY;
-mongoose.connect(dbURL);
+let db = process.env.SECRET_KEY;
+mongoose.connect(db);
 
 // To create a new postSchema that contains a title and content.
 const postSchema = {
@@ -34,12 +34,17 @@ const Post = mongoose.model("Post", postSchema);
 app.get("/", function(req, res){
 
   // Find all the posts in the posts collection and render in the home.ejs file.
-  Post.find({}, function(err, posts){
-    res.render("home", {
-      startingContent: homeStartingContent,
-      posts: posts
-      });
-  }) 
+  Post.find({})
+    .then(posts => {
+        res.render("home", {
+            startingContent: homeStartingContent,
+            posts: posts
+        });
+    })
+    .catch(err => {
+        console.error(err);
+        // Handle your error here
+    });
 });
 
 app.get("/about", function(req, res){
@@ -65,26 +70,32 @@ app.post("/compose", function(req, res){
   });
 
   // Save the document to database
-  post.save()
 
-  res.redirect("/");
+  post.save()
+  .then(() => {
+    res.redirect("/");
+  })
+  .catch(err => {
+    console.error(err);
+    // Handle your error here
+  });
+
 });
 
-app.get("/posts/:postName", function(req, res){
-  const requestedTitle = _.lowerCase(req.params.postName);
-
-  posts.forEach(function(post){
-    const storedTitle = _.lowerCase(post.title);
-
-    if (storedTitle === requestedTitle) {
+app.get("/posts/:postId", function(req, res){
+  const requestedPostId = req.params.postId;
+  Post.findOne({_id: requestedPostId})
+    .then(post => {
       res.render("post", {
         title: post.title,
         content: post.content
       });
-    }
-  });
-
+    })
+    .catch(err => {
+      console.error(err);
+    });
 });
+
 
 app.listen(3000, function() {
   console.log("Server started on port 3000");
