@@ -22,21 +22,24 @@ let dbURL = process.env.SECRET_KEY;
 mongoose.connect(dbURL);
 
 // To create a new postSchema that contains a title and content.
-
 const postSchema = {
-  name: String,
-};
+  title: String,
+  content: String
+ };
 
+// To create a new mongoose model using the schema to define posts collection.
 const Post = mongoose.model("Post", postSchema);
-
-let posts = [];
 
 
 app.get("/", function(req, res){
-  res.render("home", {
-    startingContent: homeStartingContent,
-    posts: posts
-    });
+
+  // Find all the posts in the posts collection and render in the home.ejs file.
+  Post.find({}, function(err, posts){
+    res.render("home", {
+      startingContent: homeStartingContent,
+      posts: posts
+      });
+  }) 
 });
 
 app.get("/about", function(req, res){
@@ -51,16 +54,20 @@ app.get("/compose", function(req, res){
   res.render("compose");
 });
 
+
+// Create a new post document using mongoose model.
 app.post("/compose", function(req, res){
-  const post = {
+
+
+  const post = new Post ({
     title: req.body.postTitle,
     content: req.body.postBody
-  };
+  });
 
-  posts.push(post);
+  // Save the document to database
+  post.save()
 
   res.redirect("/");
-
 });
 
 app.get("/posts/:postName", function(req, res){
